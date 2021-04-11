@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UserNotifications
 
 class Affair{
     var name: String = ""
@@ -30,7 +31,6 @@ struct ContentView: View {
     @State var cardnum = affairs.count
     
     var body: some View {
-        
         
         ScrollView(.horizontal) {
             HStack(spacing: 20) {
@@ -94,10 +94,10 @@ struct GradientCard: View {
                 VStack{
                     Form {
                         Section(header: Text("事务名称")) {
-                            TextField("Username", text: $affair.name)
+                            TextField("事务名称", text: $affair.name)
                         }
                         Section(header: Text("事务描述")) {
-                            TextField("Username", text: $affair.description)
+                            TextField("事务描述", text: $affair.description)
                         }
                         Section() {
                             DatePicker(selection: $affair.reminderTime, label: { Text("时间") })
@@ -125,7 +125,31 @@ struct GradientCard: View {
                 withAnimation{
                     warm.toggle()
                     //todo: zhucitongzhi
-                    print("toggling skin")
+                    UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { success, error in
+                        if success {
+                            print("All set!")
+                        } else if let error = error {
+                            print(error.localizedDescription)
+                        }
+                    }
+                    let content = UNMutableNotificationContent()
+                    content.title = affair.name
+                    content.subtitle = affair.description
+                    content.sound = UNNotificationSound.default
+
+                    // show this notification
+                    let comps = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute, .second], from: affair.reminderTime)
+                    print("comps")
+                    print(comps)
+
+                    let trigger = UNCalendarNotificationTrigger(dateMatching: comps, repeats: false)
+
+                    // choose a random identifier
+                    let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: trigger)
+
+                    // add our notification request
+                    UNUserNotificationCenter.current().add(request)
+                    print("notification added")
                 }
             }) {
                 Text(warm ? "开启通知" : "取消通知")
